@@ -23,11 +23,14 @@ local playerIsInvincible = false
 local rowOfInvadersWhoCanFire = 5
 local invaderFireTimer -- timer used to fire invader bullets
 local gameIsOver = false;
-local drawDebugButtons = {}  --Temporary buttons to move player in simulator
+local drawDebugButtons = {}  -- buttons to move player in simulator
 local enableBulletFireTimer -- timer that enables player to fire
 local invaderNum = 1
 local rowsOfInvaders = 5
 local maxLevels = 2
+local playerBulletSpeed = 750  -- initial player bullet speed
+local gunUpgradeTimer  -- timer used to spawn upgrades
+local canSpawnUpgrade = true  -- used to make sure an upgrade can be spawned
 
 physics.start()
 
@@ -39,12 +42,12 @@ function movementButtons()
             player.x = player.x + 1
         end
     end
-    local left = display.newRect(20,20,20,20)
+    local left = display.newImageRect("left.png",25,25)
     left.name = "left"
 	left.x = display.contentCenterX-100
 	left.y = display.contentHeight - 40
     scene.view:insert(left)
-    local right = display.newRect(20,20,20,20)
+    local right = display.newImageRect("right.png",25,25) -- newRect(20,20,20,20)
     right.name = "right"
 	right.x = display.contentCenterX + 100
 	right.y = display.contentHeight - 40
@@ -72,6 +75,7 @@ function scene:show(event)
 	   Runtime:addEventListener("enterFrame", firePlayerBullet)
 	   Runtime:addEventListener( "collision", onCollision )
 	   invaderFireTimer =    timer.performWithDelay(1500, fireInvaderBullet,-1)
+       gunUpgradeTimer  =    timer.performWithDelay(5000, spawnUpgrade,-1)
      end
 end
 
@@ -84,6 +88,20 @@ function scene:hide(event)
 		Runtime:removeEventListener("enterFrame", firePlayerBullet)
 		Runtime:removeEventListener( "collision", onCollision )
 		timer.cancel(invaderFireTimer)
+        timer.cancel(gunUpgradeTimer)
+    end
+end
+
+function spawnUpgrade()
+    if(canSpawnUpgrade) then
+        local upgrade = display.newImageRect("upgrade.png",15,15)
+        upgrade.name = "upgrade"
+        upgrade.x = display.contentCenterX + math.random(-100,100)
+        upgrade.y = display.contentHeight - playerHeight - 10
+        scene.view:insert(upgrade)
+        physics.addBody(upgrade,"dynamic")
+        upgrade.gravityScale = 0
+        canSpawnUpgrade = false
     end
 end
 
@@ -121,7 +139,7 @@ function firePlayerBullet()
     local function enableBulletFire()
         canFireBullet = true
     end
-    timer.performWithDelay(750,enableBulletFire,1)
+    timer.performWithDelay(playerBulletSpeed,enableBulletFire,1)
 end
 
 function checkPlayerBulletsOutOfBounds()
@@ -133,6 +151,14 @@ function checkPlayerBulletsOutOfBounds()
                 table.remove(playerBullets,i)
             end
         end
+    end
+end
+
+function upgradePlayerGun()
+    if(playerBulletSpeed - 200 > 100) then
+        playerBulletSpeed = playerBulletSpeed - 200
+    else
+        playerBulletSpeed = 100
     end
 end
 
@@ -230,6 +256,12 @@ function onCollision(event)
          if(event.object1.name == "invader" and event.object2.name == "player") then
             numberOfLives = 0
             killPlayer()
+        end
+        if(event.object1.name == "player" and event.object2.name == "upgrade") then
+            upgradePlayerGun()
+            event.object2:removeSelf()
+            event.object2 = nil
+            canSpawnUpgrade = true -- upgrade got picked up; spawn another
         end
     end
 end 
