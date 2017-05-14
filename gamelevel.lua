@@ -13,21 +13,20 @@ local leftBounds = 30 -- the left margin
 local rightBounds = display.contentWidth - 30 -- the right margin
 local invaderHalfWidth = 16
 local invaders = {} -- Table that holds all the invaders
-local invaderSpeed = 1
+local invaderSpeed = .5
 local playerBullets = {} -- Table that holds the players Bullets
 local canFireBullet = true
 local invadersWhoCanFire = {} -- Table that holds the invaders that are able to fire bullets
 local invaderBullets = {}
 local numberOfLives = 3
 local playerIsInvincible = false
+local rowsOfInvaders = 5
 local rowOfInvadersWhoCanFire = 5
 local invaderFireTimer -- timer used to fire invader bullets
 local gameIsOver = false;
 local drawDebugButtons = {}  -- buttons to move player in simulator
 local enableBulletFireTimer -- timer that enables player to fire
-local invaderNum = 1
-local rowsOfInvaders = 5
-local maxLevels = 2
+local maxLevel = 10
 local playerBulletSpeed = 750  -- initial player bullet speed
 local gunUpgradeTimer  -- timer used to spawn upgrades
 local canSpawnUpgrade = true  -- used to make sure an upgrade can be spawned
@@ -56,6 +55,15 @@ function movementButtons()
     right:addEventListener("touch", movePlayer)
 end
 
+function onKeyEvent(event)
+	if(event.keyName == "left") then 
+		player.x = player.x - 2
+	elseif(event.keyName == "right") then
+		player.x = player.x + 2
+	end
+end
+		
+
 function scene:create(event)
     local group = self.view
     starGenerator =  starFieldGenerator.new(100,group,3)
@@ -74,6 +82,7 @@ function scene:show(event)
        Runtime:addEventListener("enterFrame", starGenerator)
 	   Runtime:addEventListener("enterFrame", firePlayerBullet)
 	   Runtime:addEventListener( "collision", onCollision )
+	   Runtime:addEventListener("key", onKeyEvent)
 	   invaderFireTimer =    timer.performWithDelay(1500, fireInvaderBullet,-1)
        gunUpgradeTimer  =    timer.performWithDelay(5000, spawnUpgrade,-1)
      end
@@ -87,6 +96,7 @@ function scene:hide(event)
         Runtime:removeEventListener("enterFrame", starGenerator)
 		Runtime:removeEventListener("enterFrame", firePlayerBullet)
 		Runtime:removeEventListener( "collision", onCollision )
+		Runtime:removeEventListener("key", onKeyEvent)
 		timer.cancel(invaderFireTimer)
         timer.cancel(gunUpgradeTimer)
     end
@@ -163,8 +173,8 @@ function upgradePlayerGun()
 end
 
 function setupInvaders()
-    local xPositionStart = display.contentCenterX - invaderHalfWidth - (invaderNum *(invaderSize + 10))
-    local numberOfInvaders = invaderNum *2+1 
+    local xPositionStart = display.contentCenterX - invaderHalfWidth - (gameData.invaderNum *(invaderSize + 10))
+    local numberOfInvaders = gameData.invaderNum *2+1 
     for i = 1, rowsOfInvaders do
         for j = 1, numberOfInvaders do
             local tempInvader = display.newImage("bread.png",xPositionStart + ((invaderSize+10)*(j-1)), i * 10 )			
@@ -204,12 +214,12 @@ function onCollision(event)
     local function removeInvaderAndPlayerBullet(event)
         local params = event.source.params
         local invaderIndex = table.indexOf(invaders,params.theInvader)
-        local invadersPerRow = invaderNum *2+1
+        local invadersPerRow = gameData.invaderNum *2+1
         if(invaderIndex > invadersPerRow) then
             table.insert(invadersWhoCanFire, invaders[invaderIndex - invadersPerRow])
        end
         params.theInvader.isVisible = false
-        physics.removeBody(  params.theInvader )
+        physics.removeBody( params.theInvader )
         table.remove(invadersWhoCanFire,table.indexOf(invadersWhoCanFire,params.theInvader))
          
         if(table.indexOf(playerBullets,params.thePlayerBullet)~=nil)then
@@ -302,7 +312,8 @@ function killPlayer()
     numberOfLives = numberOfLives- 1;
       if(numberOfLives <= 0) then
         invaderNum  = 1
-        composer.gotoScene("start")
+        composer.gotoScene("gameover")
+		gameData.numberOfInvaders = 1
     else
         playerIsInvincible = true
         spawnNewPlayer()
@@ -310,7 +321,7 @@ function killPlayer()
 end
 
 function spawnNewPlayer()
-    local numberOfTimesToFadePlayer = 5
+    local numberOfTimesToFadePlayer = 4
     local numberOfTimesPlayerHasFaded = 0
      
     local  function fadePlayer()
@@ -327,19 +338,19 @@ function spawnNewPlayer()
 end
 
 function levelComplete()
-    invaderNum  = invaderNum  + 1
-    if(invaderNum  <= maxLevels) then
-         composer.gotoScene("gameover")
+    gameData.invaderNum  = gameData.invaderNum  + 1
+    if(gameData.invaderNum  <= gameData.maxLevels) then
+         composer.gotoScene("nextlevel")
     else
-        invaderNum  = 1
-        composer.gotoScene("start")
+        gameData.invaderNum  = 1
+        composer.gotoScene("gameover")
      end
 end
 
 function gameLoop()
     checkPlayerBulletsOutOfBounds()
 	checkInvaderBulletsOutOfBounds()
-	--moveInvaders()
+	moveInvaders()
 end
 
 scene:addEventListener( "create", scene )
