@@ -7,7 +7,7 @@ local starGenerator
 function scene:create( event )
     local group = self.view
     starGenerator =  starFieldGenerator.new(100,group,3)
-    local   invadersText =  pulsatingText.new("GAME OVER", display.contentCenterX, display.contentCenterY-200,"Conquest", 20,group )
+    local   invadersText =  pulsatingText.new("LEVEL COMPLETE", display.contentCenterX, display.contentCenterY-200,"Conquest", 20,group )
     invadersText:setColor( 1, 1, 1 )
     invadersText:pulsate()
     nextLevelButton = display.newImage("start.png",display.contentCenterX, display.contentCenterY)

@@ -1,3 +1,7 @@
---GameData
- invaderNum = 1
-local rowsOfInvaders = 5
+
+local gamedata = {
+	invaderNum = 1,
+	maxLevels = 10,
+	rowsOfInvaders = 5
+	}
+return gamedata
