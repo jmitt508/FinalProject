@@ -1,0 +1,5 @@
+John Mitton & Ben Schwabe
+
+Since Thursday we have added key functionality to move the ship, a better next level and game over screen, and have added
+the capabilities for more than one level. One issue that came up is that once you hit the third level it crashes automatically 
+and we were unable to figure out why.
